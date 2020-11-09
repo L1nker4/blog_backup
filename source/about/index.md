@@ -5,7 +5,7 @@ layout: about
 
 ### 关于我
 
-大二在读，计算机科学专业。
+大三在读，计算机科学专业。
 
 从Script Boy到Programmer的转变。
 
@@ -19,5 +19,5 @@ layout: about
 
 ### 博客
 
-博客开始于2014年，历经Wordpress，typecho，ghost，新博客搭于2018年夏季使用Hexo搭建，主要记录在计算机行业的成长之路。
+博客开始于2014年，历经Wordpress，typecho，ghost等波尔克系统，新博客搭于2018年夏季使用Hexo搭建，主要记录在计算机行业的成长之路。
 

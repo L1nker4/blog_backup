@@ -52,7 +52,7 @@ Java 虚拟机栈会出现两种异常：`StackOverFlowError` 和 `OutOfMemoryEr
 -  如果Java虚拟机栈容量可以动态扩展，当栈扩展时无法申请到足够内存会抛出`OutOfMemoryError`
 
 ### 本地方法栈
-本地方法栈是为JVM使用到的`Native`方法准备的空间
+本地方法栈是为JVM使用到的`Native`方法准备的空间。
 
 
 

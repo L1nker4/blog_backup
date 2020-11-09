@@ -272,7 +272,7 @@ gitalk:
   repo: blog-comment                         # The repo to store comments
   owner: l1nker4                        # GitHub repository owner. Can be personal user or organization.
   admin: l1nker4                        # GitHub repo owner and collaborators, only these guys can initialize github issues, should be like "['admin']" or "['admin1','admin2']"
-  id: location.pathname         # The unique id of the page. Length must less than 50.
+  id: location.href         # The unique id of the page. Length must less than 50.
   language: zh-CN               # Localization language key, en, zh-CN and zh-TW are currently available.
   labels: "['Gitalk']"          # GitHub issue labels.
   perPage: 15                   # Pagination size, with maximum 100.

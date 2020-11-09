@@ -1,5 +1,5 @@
 ---
-title: Java并发基础之Java线程
+title: Java线程基础知识
 date: 2020-04-03 20:27:03
 categories:
 - Java
@@ -9,15 +9,31 @@ tags:
 - 并发
 ---
 
-
-
-## 线程
+## 进程与线程
 
 
 
-### 什么是线程
+### 什么是进程
 
-操作系统在运行一个程序时，会为其创建一个进程，操作系统调度的最小单元时线程，也叫轻量级进程，在一个进程里可以创建多个线程，多个线程共享进程的堆和方法区两块内存空间。
+操作系统在运行一个程序时，会为其创建一个进程，操作系统调度的最小单元是线程，也叫轻量级进程，在一个进程里可以创建多个线程，多个线程共享进程的堆和方法区两块内存空间。
+
+
+
+#### 进程和线程的区别
+
+- **进程是操作系统进行资源分配的基本单位，而线程是操作系统进行调度的基本单位。**
+
+- 进程单独占有一定的内存地址空间，所以进程间存在内存隔离，数据是分开的，数据共享复杂但是同步简单，各个进程之间互不干扰；而线程共享所属进程占有的内存地址空间和资源，数据共享简单，但是同步复杂。
+- 进程单独占有一定的内存地址空间，一个进程出现问题不会影响其他进程，不影响主程序的稳定性，可靠性高；一个线程崩溃可能影响整个程序的稳定性，可靠性较低。
+- 进程单独占有一定的内存地址空间，进程的创建和销毁不仅需要保存寄存器和栈信息，还需要资源的分配回收以及页调度，开销较大；线程只需要保存寄存器和栈信息，开销较小。
+
+
+
+#### 上下文切换
+
+
+
+上下文切换是指CPU从一个进程（线程）切换到另一个进程（线程）。**上下文是指某一个时间点CPU寄存器和PC的数据**。
 
 
 
@@ -29,9 +45,15 @@ tags:
 >
 > The other way to create a thread is to declare a class that implements the `Runnable` interface. That class then implements the `run` method. An instance of the class can then be allocated, passed as an argument when creating `Thread`, and started. 
 
-在《Java并发编程之美》中，给出的创建方式为三种，多了一个使用FutureTask方式，在网上一些文章给出了其他方式：实现Callable接口，线程池创建等。根据个人理解：无论哪种方法，只是表现不一样，本身都是通过Thread来处理，因为它才是Java中的线程类。
+实现Runnable和Callable接口的类只能当作是一个可以在线程中运行的任务，不是真正意义上的线程。
 
 线程对象在构建的时候需要提供线程所需的属性，如线程所属的线程组，线程优先级，是否守护线程等信息，下面贴出`Thread.init()`方法。
+
+- g：线程组，指定该线程在哪个线程组下
+- target：指定要执行的任务
+- name：线程的名称
+- acc：用来初始化私有变量`inheritedAccessControlContext`，`exit`时会将该变量置为`null`，用来做线程的权限控制
+- inheritThreadLocals：可继承的`ThreadLocal`
 
 ```java
 private void init(ThreadGroup g, Runnable target, String name,
@@ -106,13 +128,162 @@ private void init(ThreadGroup g, Runnable target, String name,
 
 
 
+#### Thread类
+
+```java
+static class MyThread extends Thread {
+        @Override
+        public void run() {
+            System.out.println("hello world");
+        }
+    }
+
+    public static void main(String[] args) {
+        Thread myThread = new MyThread();
+        myThread.start();
+    }
+```
+
+
+
+#### Runnable接口
+
+`Runnable`是一个函数式接口。提供了`Lambda`方式进行简化。
+
+```java
+@FunctionalInterface
+public interface Runnable {
+    public abstract void run();
+}
+```
+
+
+
+```java
+public static class MyThread implements Runnable {
+        @Override
+        public void run() {
+            System.out.println("hello world");
+        }
+    }
+
+    public static void main(String[] args) {
+        new Thread(new MyThread()).start();
+    }
+```
+
+
+
+#### Callable接口
+
+`Callable`与`Runnable`类似，都是函数式接口，不过`Callable`提供的接口有返回值。
+
+```java
+@FunctionalInterface
+public interface Callable<V> {
+    V call() throws Exception;
+}
+```
+
+`Callable`一般配合`ExecutorService`使用。
+
+```java
+<T> Future<T> submit(Callable<T> task);
+```
+
+
+
+Demo：
+
+```java
+public class CallableDemo {
+
+    public static void main(String[] args) throws Exception {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        Task task = new Task();
+        Future<Integer> result = executor.submit(task);
+        // 注意调用get方法会阻塞当前线程，直到得到结果。
+        // 所以实际编码中建议使用可以设置超时时间的重载get方法。
+        System.out.println(result.get());
+    }
+}
+
+class Task implements Callable<Integer>{
+    @Override
+    public Integer call() throws Exception {
+        // 模拟计算需要一秒
+        Thread.sleep(1000);
+        return 2;
+    }
+}
+
+```
+
+
+
+#### Future接口
+
+`Future`就是对具体的`Runnable`或者`Callable`任务执行结果进行取消，查询是否完成，获取结果。
+
+```java
+public abstract interface Future<V> {
+    //取消任务
+    public abstract boolean cancel(boolean paramBoolean);
+    //任务是否被取消
+    public abstract boolean isCancelled();
+    //是否已经完成
+    public abstract boolean isDone();
+    //用来获取执行结果，产生阻塞，知道任务执行完毕才返回
+    public abstract V get() throws InterruptedException, ExecutionException;
+    //获取执行结果，指定时间未完成，返回null
+    public abstract V get(long paramLong, TimeUnit paramTimeUnit)
+            throws InterruptedException, ExecutionException, TimeoutException;
+}
+```
+
+
+
+### FutureTask
+
+`FutureTask`实现了`Future`接口。`FutureTask`是实现的`RunnableFuture`接口的，而`RunnableFuture`接口同时继承了`Runnable`接口和`Future`接口。
+
+```java
+static class Task implements Callable<Integer> {
+        @Override
+        public Integer call() throws Exception {
+            Thread.sleep(1000);
+            return 5;
+        }
+        public static void main(String[] args) throws Exception {
+            ExecutorService executor = Executors.newCachedThreadPool();
+            FutureTask<Integer> futureTask = new FutureTask<>(new Task());
+            executor.submit(futureTask);
+            System.out.println(futureTask.get());
+        }
+    }
+```
+
+
+
+### 线程组
+
+`ThreadGroup`可以对线程进行批量控制。每个`Thread`必然属于一个`ThreadGroup`。创建新线程是不显式指定，默认将父线程所属线程组设置成自己的线程组。
+
+```java
+System.out.println(Thread.currentThread().getThreadGroup().getName());
+```
+
+
+
 ### 线程优先级
 
 现代操作系统基本采用时分的形式调度运行的线程，操作系统会分出一个个时间片，线程会分配到若干个时间片，当线程的时间片用完了就会发生线程调度，并等待着下次分配，线程分配到的时间片多少决定线程使用处理器资源的多少，而线程优先级就是决定线程需要多或少分配一些处理器资源的线程属性。
 
-在Java线程中，通过一个priority来控制优先级，优先级范围从1~10，在线程构建的时候，可以通过`setPriority(int)`方法来修改优先级，默认优先级为5，优先级高的线程分配时间片的数量要多于优先级低的线程。
+在`Java`线程中，通过一个priority来控制优先级，优先级范围从1~10，在线程构建的时候，可以通过`setPriority(int)`方法来修改优先级，默认优先级为5，优先级高的线程分配时间片的数量要多于优先级低的线程。
 
-线程的优先级不能作为程序正确性的依赖，因为操作系统完全可以不理会Java线程对于优先级的设定。
+Java只是给操作系统一个优先级的**参考值**，线程最终**在操作系统的优先级**是由操作系统的**线程调度算法**决定的。
+
+可以通过`Thread`中的`setPriority()`方法设置线程的优先级
 
 
 
@@ -126,9 +297,9 @@ Java线程在运行的生命周期中可能处于6种不同的状态，在给定
 | :----------: | :----------------------------------------------------------: |
 |     NEW      |       初始状态，线程被构建，但是还没有调用start()方法        |
 |   RUNNABLE   | 运行状态，Java线程将操作系统中的就绪和运行两种状态统称为运行 |
-|   BLOCKED    |                  阻塞状态，表示线程阻塞于锁                  |
+|   BLOCKED    |                    阻塞状态，表示线程阻塞                    |
 |   WAITING    | 等待状态，进入该状态表示当前线程需要等待其他线程做出一些动作（通知或中断） |
-| TIME_WAITING | 超时等待状态，该状态不同于WAITING，它是可以在指定的时间自行返回的 |
+| TIME_WAITING | 限期等待状态，该状态不同于WAITING，它是可以在指定的时间自行返回的 |
 |  TERMINATED  |                终止状态，表示当前线程执行完毕                |
 
 
@@ -331,10 +502,3 @@ synchronized(对象){
 
 
 
-
-
-## 参考
-
-《Java并发编程的艺术》
-
-《Java并发编程之美》

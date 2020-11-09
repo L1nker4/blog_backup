@@ -1,5 +1,5 @@
 ---
-title: Java8学习笔记
+title: Java8特性
 date: 2020-08-13 13:31:02
 categories:
 - Java
