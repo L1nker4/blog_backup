@@ -1,5 +1,5 @@
 ---
-title: Java原子类实现解析
+title: Java原子类剖析
 date: 2020-10-29 19:39:23
 categories:
 - Java
